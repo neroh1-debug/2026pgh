@@ -467,7 +467,10 @@
     if (d.ok) {
       me = { name: d.name, group: d.group };
       saveMe();
-      showJoin('ok');
+      // 이름 확인 후 확인 화면 없이 발표자가 띄운 화면으로 바로 입장
+      tab = 'screen';
+      enterAudience();
+      toast(`${me.name} 선생님 · ${me.group}분임(${C.GROUPS[me.group - 1].topic}) 배정`);
     } else if (d.candidates) showJoin('pick', { name, candidates: d.candidates });
     else showJoin('pick', { name, rosterSize: d.rosterSize });
   }
