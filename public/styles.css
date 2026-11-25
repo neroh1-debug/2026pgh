@@ -537,3 +537,7 @@ input, textarea { font-family: inherit; }
 .join-steps { top: 300px; gap: 44px; }
 .jstep { align-items: center; }
 .jstep h4 { margin: 0; font-size: 44px; }
+
+/* 발표자 질문 버튼: 분임 결과 슬라이드의 공감 수를 가리지 않도록 왼쪽 위로 */
+.qbtn { top: 14px; bottom: auto; left: 14px; }
+.ansbtn { top: 68px; bottom: auto; left: 14px; }
