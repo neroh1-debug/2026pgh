@@ -132,13 +132,13 @@
       </div>`,
 
     guide: () => `${H(2)}${T('토의 진행 방법')}
-      <div class="flow">
-        ${C.FIELDS.map((f, i) => `<div class="fl f${i + 1} a up" style="--d:${0.4 + i * 0.3}s"><div class="n">${i + 1}</div><div class="h">${f.label}</div><div class="s">${f.sub}</div></div>${i < 2 ? `<div class="arr a fade" style="--d:${0.6 + i * 0.3}s">→</div>` : ''}`).join('')}
+      <div class="flow four">
+        ${[['개인 의견 입력', '분임원 각자', '좋았던 점 · 개선할 점<br>실천 제안 입력'], ['의견 함께 보며 토론', '분임원 모두', '[모두의 의견 보기]로<br>확인하며 말로 토론'], ['최종 의견 정리', '분임장', '토론 내용을 요약하여<br>분임 최종 의견 작성'], ['실시간 공유', '전체', '전체 화면 공유<br>공감 ♥ · 댓글(익명 가능)']]
+          .map(([h, who, s], i) => `<div class="fl f${i + 1} a up" style="--d:${0.4 + i * 0.25}s"><div class="n">${i + 1}</div><div class="who">${who}</div><div class="h">${h}</div><div class="s">${s}</div></div>${i < 3 ? `<div class="arr a fade" style="--d:${0.55 + i * 0.25}s">→</div>` : ''}`).join('')}
       </div>
       <div class="rules">
-        <div class="ru a left" style="--d:1.3s"><b>분임장</b><span>휴대폰 <em>우리 분임</em> 탭에서 세 항목 기록 후 <em>제출</em></span></div>
-        <div class="ru a left" style="--d:1.5s"><b>분임원</b><span>같은 탭에서 분임장의 기록 실시간 확인</span></div>
-        <div class="ru a left" style="--d:1.7s"><b>공유</b><span>제출된 내용은 다음 순서에서 전체 화면으로 공유</span></div>
+        <div class="ru a left" style="--d:1.5s"><b>입력 위치</b><span>휴대폰 <em>우리 분임</em> 탭 · 입력 내용 자동 저장</span></div>
+        <div class="ru a left" style="--d:1.7s"><b>입력 항목</b><span>${C.FIELDS.map((f) => f.label).join(' · ')}</span></div>
       </div>`,
 
     timer: () => `${H(2)}
@@ -167,6 +167,10 @@
         <div class="rp-meta a fade" style="--d:.4s"><span data-rlead></span><span class="like"><span class="h">♥</span> 공감 <b data-total="${n}">0</b></span></div>
         <div class="rp-cols" data-report="${p.g}">
           ${C.FIELDS.map((f, i) => `<div class="rp a up" style="--d:${0.35 + i * 0.2}s;--c:${g.color}"><div class="h"><b>${f.label}</b><small>${f.sub}</small></div><div class="bd" data-f="${f.key}"></div></div>`).join('')}
+        </div>
+        <div class="cm-strip a fade" style="--d:.9s" data-comments="${p.g}">
+          <div class="cm-k">💬 댓글 <b data-cn>0</b></div>
+          <div class="cm-items"></div><div class="cm-empty">휴대폰에서 공감 ♥ 과 댓글을 남겨 주십시오</div>
         </div>`;
     },
 

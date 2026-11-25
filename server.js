@@ -36,7 +36,9 @@ let state = {
   roster: [],      // { name, group, leader, note }
   people: {},      // { [clientId]: { name, group, ts } }
   leaders: {},     // { [group]: name }
-  reports: {},     // { [group]: { achieve, issue, propose, status, by, ts } }
+  reports: {},     // { [group]: { achieve, issue, propose, status, by, ts } }  분임장 최종 의견
+  notes: {},       // { [group]: { [name]: { achieve, issue, propose, ts } } }  분임원 개인 의견
+  comments: {},    // { [group]: [{ id, t, name, ts, hidden }] }
   timer: { dur: 20 * 60000, end: null, left: 20 * 60000 },
 };
 try { state = Object.assign(state, JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'))); } catch (_) { /* 처음 실행 */ }
@@ -133,6 +135,7 @@ function groupsInfo() {
       joined: [...joined],
       leader: state.leaders[g] || null,
       status: rep ? rep.status : null,
+      notes: Object.values(state.notes[g] || {}).filter((n) => CFG.FIELDS.some((f) => (n[f.key] || '').trim())).length,
     });
   }
   return info;
@@ -179,15 +182,25 @@ function broadcast() {
   broadcastTimer = setTimeout(() => {
     broadcastTimer = null;
     const pub = `event: state\ndata: ${JSON.stringify(publicState())}\n\n`;
-    const full = `event: reports\ndata: ${JSON.stringify(state.reports)}\n\n`;
-    const perGroup = {};
-    for (let g = 1; g <= NG; g++) perGroup[g] = `event: reports\ndata: ${JSON.stringify(state.reports[g] ? { [g]: state.reports[g] } : {})}\n\n`;
+    // 분임장 최종 의견·댓글·분임원 개인 의견 (개인 의견은 같은 분임과 발표자에게만)
+    const allComments = {};
+    for (let g = 1; g <= NG; g++) allComments[g] = (state.comments[g] || []).filter((c) => !c.hidden).map(({ id, t, name, ts }) => ({ id, t, name, ts }));
+    const pack = (o) => `event: reports\ndata: ${JSON.stringify(o)}\n\n`;
+    const presFull = pack({ reports: state.reports, comments: allComments, notes: state.notes });
+    const perGroup = {}, fullFor = {};
+    for (let g = 1; g <= NG; g++) {
+      const own = { [g]: state.notes[g] || {} };
+      perGroup[g] = pack({ reports: state.reports[g] ? { [g]: state.reports[g] } : {}, comments: { [g]: allComments[g] }, notes: own });
+      fullFor[g] = pack({ reports: state.reports, comments: allComments, notes: own });
+    }
+    const fullAnon = pack({ reports: state.reports, comments: allComments, notes: {} });
     const pres = `event: questions\ndata: ${JSON.stringify({ questions: state.questions })}\n\n`;
     const needAll = REPORT_SLIDES.has(state.slide);
     for (const [res, info] of clients) {
       res.write(pub);
       const me = info.cid && state.people[info.cid];
-      if (info.presenter || needAll) res.write(full);
+      if (info.presenter) res.write(presFull);
+      else if (needAll) res.write(me ? fullFor[me.group] : fullAnon);
       else if (me) res.write(perGroup[me.group]);
       if (info.presenter) res.write(pres);
     }
@@ -289,6 +302,14 @@ function exportCsv() {
       r.words.forEach((w) => push(w.text, w.count));
     }
   }
+  push();
+  push('[분임원 개인 의견]');
+  push('분임', '이름', ...CFG.FIELDS.map((f) => f.label));
+  for (let g = 1; g <= NG; g++) for (const [nm, n] of Object.entries(state.notes[g] || {})) push(`${g}분임`, nm, ...CFG.FIELDS.map((f) => n[f.key] || ''));
+  push();
+  push('[분임 결과 댓글]');
+  push('분임', '작성자', '댓글');
+  for (let g = 1; g <= NG; g++) for (const c of state.comments[g] || []) if (!c.hidden) push(`${g}분임`, c.name || '익명', c.t);
   if (state.questions.length) {
     push();
     push('[질문]');
@@ -400,6 +421,27 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { ok: true, status: rep.status });
     }
 
+    // ----- 분임원 개인 의견 · 댓글 -----
+    if (action === 'note') {
+      if (!me) return json(res, 401, { error: '먼저 이름을 입력해 주십시오.' });
+      const f = body.fields || {};
+      const n = { ts: Date.now() };
+      for (const fd of CFG.FIELDS) n[fd.key] = cleanText(f[fd.key], 600);
+      (state.notes[me.group] = state.notes[me.group] || {})[me.name] = n;
+      save(); broadcast();
+      return json(res, 200, { ok: true });
+    }
+    if (action === 'comment') {
+      const g = Number(body.g);
+      const t = cleanText(body.text, 200);
+      if (!(g >= 1 && g <= NG)) return json(res, 400, { error: 'bad group' });
+      if (!t) return json(res, 400, { error: '댓글 내용을 입력해 주십시오.' });
+      const name = body.anon || !me ? '' : me.name;
+      (state.comments[g] = state.comments[g] || []).push({ id: rid(), t, name, ts: Date.now() });
+      save(); broadcast();
+      return json(res, 200, { ok: true });
+    }
+
     // ----- 참여자 응답 -----
     if (action === 'respond') {
       const slide = Number(body.slide);
@@ -501,6 +543,9 @@ const server = http.createServer(async (req, res) => {
     } else if (action === 'reopen') {
       const r = state.reports[Number(body.g)];
       if (r) r.status = 'draft';
+    } else if (action === 'chide') {
+      const c = (state.comments[Number(body.g)] || []).find((x) => x.id === body.id);
+      if (c) c.hidden = true;
     } else if (action === 'clearPeople') {
       state.people = {};
     } else {

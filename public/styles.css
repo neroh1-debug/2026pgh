@@ -234,7 +234,7 @@ input, textarea { font-family: inherit; }
 .rp-meta .like .h { color: var(--red); }
 .rp-meta .like.bump { animation: bump .45s; }
 @keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
-.rp-cols { position: absolute; left: 70px; right: 70px; top: 290px; bottom: 50px; display: flex; gap: 24px; }
+.rp-cols { position: absolute; left: 70px; right: 70px; top: 290px; bottom: 168px; display: flex; gap: 24px; }
 .rp { flex: 1; min-width: 0; border-radius: 26px; background: #f6f8fc; display: flex; flex-direction: column; overflow: hidden; }
 .rp .h { padding: 18px 26px 14px; border-bottom: 3px solid #e6ebf4; }
 .rp .h b { display: block; font-size: 30px; white-space: nowrap; font-weight: 800; color: var(--navy-d); }
@@ -463,3 +463,49 @@ input, textarea { font-family: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .slide.play .a, .slide.play .draw { animation-duration: .01s !important; animation-delay: 0s !important; }
 }
+
+/* ---------- 토의 진행 4단계 ---------- */
+.flow.four { gap: 10px; top: 262px; }
+.flow.four .fl { height: 250px; padding: 0 12px; }
+.flow.four .fl .h { font-size: 33px; margin-top: 6px; }
+.flow.four .fl .s { font-size: 21px; line-height: 1.45; }
+.flow.four .arr { font-size: 40px; }
+.fl .who { margin-top: 10px; font-size: 19px; font-weight: 800; color: #fff; background: #8fa1c4; padding: 3px 12px; border-radius: 10px; }
+.fl.f1 .who, .fl.f2 .who { background: var(--sky); }
+.fl.f3 .who { background: var(--navy); }
+.fl.f4 .who { background: var(--teal); }
+.fl.f4 .n { background: #6a54b8; }
+.flow.four + .rules { top: 560px; }
+
+/* ---------- 분임 결과 댓글 ---------- */
+.cm-strip { position: absolute; left: 70px; right: 190px; bottom: 28px; height: 122px; display: flex; gap: 14px; align-items: stretch; }
+.cm-k { flex: none; width: 112px; border-radius: 18px; background: #fdecea; color: var(--red); font-size: 21px; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.cm-k b { font-size: 36px; font-variant-numeric: tabular-nums; }
+.cm-items { flex: 1; min-width: 0; display: flex; gap: 12px; }
+.cm-i { position: relative; flex: 1; min-width: 0; max-width: 340px; border-radius: 18px; background: #f6f8fc; padding: 14px 18px; font-size: 20px; font-weight: 600; line-height: 1.45; color: #222; overflow: hidden; animation: aPop .5s both; }
+.cm-i b { display: block; font-size: 16px; color: #8a94a8; margin-bottom: 2px; }
+.cm-i span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: keep-all; overflow-wrap: anywhere; }
+.cm-i .x { display: none; position: absolute; right: 6px; top: 6px; width: 26px; height: 26px; border: 0; border-radius: 50%; background: #fff; color: #888; padding: 0; font-size: 13px; }
+.presenter .cm-i:hover .x { display: block; }
+.cm-empty { position: absolute; left: 130px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 22px; font-weight: 600; color: #a3abbb; }
+
+/* ---------- 휴대폰: 우리 분임 ---------- */
+.steps { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.steps span { font-size: 12.5px; font-weight: 800; color: var(--navy); background: #eef2f8; padding: 4px 9px; border-radius: 9px; }
+.ta.sm { min-height: 78px; font-size: 15px; }
+.gbox h5 > span:first-child { flex: 1; }
+.allnotes { margin-top: 12px; display: flex; flex-direction: column; gap: 14px; }
+.an-h { font-size: 15px; font-weight: 800; color: var(--navy-d); margin-bottom: 6px; }
+.an-h small { color: #8a94a8; font-weight: 700; margin-left: 4px; }
+.an-i { background: #f6f8fc; border-radius: 12px; padding: 10px 12px; font-size: 14.5px; line-height: 1.55; color: #222; margin-bottom: 6px; white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; }
+.an-i b { display: block; font-size: 12.5px; color: var(--teal); margin-bottom: 2px; }
+.an-i.empty { color: #a3abbb; }
+.cm-box { margin-top: 18px; border-top: 2px solid #f0f2f7; padding-top: 14px; }
+.cm-box h5 { margin: 0 0 10px; font-size: 15.5px; color: var(--navy-d); display: flex; justify-content: space-between; }
+.cm-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.cm-row .btn { height: 42px; padding: 0 18px; font-size: 15px; }
+.chk { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: #4a5468; }
+.chk input { width: 18px; height: 18px; accent-color: var(--navy); }
+.cm-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.cm-m { background: #f6f8fc; border-radius: 12px; padding: 10px 12px; font-size: 14.5px; line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere; }
+.cm-m b { display: block; font-size: 12.5px; color: #8a94a8; }

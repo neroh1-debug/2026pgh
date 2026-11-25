@@ -20,6 +20,8 @@
   let cur = 0;
   let last = null;
   let reports = {};
+  let notes = {};     // 우리 분임 선생님들의 개인 의견 { [g]: { [name]: {...} } }
+  let comments = {};  // 분임 결과 댓글 { [g]: [{ id, t, name, ts }] }
   let questions = [];
   let qFilter = 'open';
   let es = null;
@@ -211,6 +213,7 @@
     const rep = reports[g];
     if (rep && rep.status === 'done') return ['done', '제출 완료'];
     if (rep && CFG_FIELDS_FILLED(rep)) return ['draft', '작성 중'];
+    if (gi && gi.notes) return ['', `의견 ${gi.notes}명 입력`];
     if (gi && gi.leader) return ['', `분임장 ${gi.leader}`];
     return ['', gi && gi.joined.length ? '토의 중' : '대기'];
   }
@@ -361,8 +364,12 @@
       } else if (answerChanged) renderPanel();
     });
     es.addEventListener('reports', (e) => {
-      reports = Object.assign({}, reports, JSON.parse(e.data));
+      const d = JSON.parse(e.data);
+      reports = Object.assign({}, reports, d.reports);
+      comments = Object.assign({}, comments, d.comments);
+      notes = Object.assign({}, notes, d.notes);
       renderReports();
+      renderComments();
     });
     es.addEventListener('questions', (e) => {
       const prevOpen = questions.filter((q) => !q.done).length;
@@ -471,7 +478,7 @@
     if (!cfg) {
       if (['groups', 'guide', 'timer'].includes(sl.key) && me) {
         panel.innerHTML = `<h4>분임별 주제토의</h4><p class="sub">${me.group}분임 · ${esc(C.GROUPS[me.group - 1].topic)}</p>
-          <button class="btn full teal">우리 분임 토의 기록 열기 →</button>`;
+          <button class="btn full teal">우리 분임 탭 열기 (의견 입력) →</button>`;
         $('.btn', panel).onclick = () => setTab('group');
         return;
       }
@@ -516,7 +523,20 @@
     } else if (cfg.type === 'like') {
       const g = cfg.g;
       panel.innerHTML = `<h4></h4><p class="sub">${g === (me && me.group) ? '우리 분임의 결과입니다 👏' : '공감되는 분임에 하트를 눌러 주십시오'}</p>
-        <div class="rp-mobile"></div><button class="likebtn">♡ 공감</button>`;
+        <div class="rp-mobile"></div><button class="likebtn">♡ 공감</button>
+        <div class="cm-box"><h5>💬 댓글 <span class="savest" data-ccount></span></h5>
+          <form class="cm-form"><textarea class="ta sm" maxlength="200" placeholder="댓글 입력 (최대 200자)"></textarea>
+            <div class="cm-row"><label class="chk"><input type="checkbox" checked> 익명으로 작성</label><button class="btn">등록</button></div></form>
+          <div class="cm-list" data-clist></div></div>`;
+      $('.cm-form', panel).onsubmit = async (e) => {
+        e.preventDefault();
+        const ta = $('.cm-form textarea', panel);
+        const t = ta.value.trim();
+        if (!t) return;
+        await api('comment', { g, text: t, anon: $('.cm-form input', panel).checked });
+        ta.value = ''; ta.blur();
+        toast('댓글이 등록되었습니다.');
+      };
       const btn = $('.likebtn', panel);
       const paint = () => { btn.classList.toggle('on', !!mine[n]); btn.textContent = mine[n] ? '♥ 공감 완료' : '♡ 공감'; };
       paint();
@@ -528,6 +548,7 @@
         if (v && navigator.vibrate) navigator.vibrate(30);
       };
       updateReportPanel();
+      renderComments();
     } else if (cfg.type === 'text') {
       panel.innerHTML = head(`익명 전달 · 한 번에 하나씩, 최대 ${cfg.max}개`) +
         `<form><textarea class="ta" maxlength="${cfg.len}" placeholder="바라는 점을 자유롭게 적어 주십시오"></textarea>
@@ -576,6 +597,40 @@
     }
     $('h4', panel).textContent = cfg.title;
   }
+  // 댓글: 발표 화면(분임 결과 슬라이드 아래) + 휴대폰 목록
+  function renderComments() {
+    $$('[data-comments]').forEach((strip) => {
+      const g = Number(strip.dataset.comments);
+      const list = (comments[g] || []).slice().reverse();
+      $('[data-cn]', strip).textContent = list.length;
+      const row = $('.cm-items', strip);
+      const keep = new Set(list.slice(0, 4).map((c) => c.id));
+      $$('.cm-i', row).forEach((n) => { if (!keep.has(n.dataset.id)) n.remove(); });
+      list.slice(0, 4).forEach((c, i) => {
+        let n = row.querySelector(`[data-id="${c.id}"]`);
+        if (!n) {
+          n = document.createElement('div');
+          n.className = 'cm-i';
+          n.dataset.id = c.id;
+          n.innerHTML = '<b></b><span></span><button class="x" title="화면에서 숨기기">✕</button>';
+          $('b', n).textContent = c.name || '익명';
+          $('span', n).textContent = c.t;
+          $('.x', n).onclick = () => { if (isPresenter && confirm('이 댓글을 숨기시겠습니까?')) api('chide', { g, id: c.id }); };
+          row.appendChild(n);
+        }
+        n.style.order = i;
+      });
+      $('.cm-empty', strip).classList.toggle('hidden', list.length > 0);
+    });
+    const box = $('#panel [data-clist]');
+    const cfg = SLIDES[cur - 1] && SLIDES[cur - 1].interact;
+    if (box && cfg && cfg.type === 'like') {
+      const list = (comments[cfg.g] || []).slice().reverse();
+      $('#panel [data-ccount]').textContent = `${list.length}개`;
+      box.innerHTML = list.map((c) => `<div class="cm-m"><b>${esc(c.name || '익명')}</b>${esc(c.t)}</div>`).join('') || '<div class="hint">첫 댓글을 남겨 주십시오.</div>';
+    }
+  }
+
   // 결과 공유 슬라이드: 휴대폰에서도 읽기 쉽게 본문 표시
   function updateReportPanel() {
     const box = $('#panel .rp-mobile');
@@ -587,9 +642,16 @@
   }
 
   // ---------- 우리 분임 탭 ----------
+  // ① 분임원 각자 의견 입력 → ② 모두의 의견 함께 보며 토론 → ③ 분임장 최종 의견 작성·공유
   let gtabSig = '';
   let saveT = null;
+  let noteT = null;
   let leaderDirty = false;
+  let noteDraft = null;   // 입력 중인 내 의견 (화면을 다시 그려도 유지)
+  let showAll = false;    // '모두의 의견 보기' 펼침 여부
+  const hhmm = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+  const filled = (n) => n && C.FIELDS.some((f) => (n[f.key] || '').trim());
+
   function updateGroupTab(force) {
     if (isPresenter || !me) return;
     const root = $('#tabGroup');
@@ -602,16 +664,37 @@
       if (!(amLeader && sig === gtabSig && root.firstChild)) buildGroupTab(root, g, leader, amLeader);
       gtabSig = sig;
     }
-    // 실시간 갱신
+    // 함께하는 선생님
     const mem = $('[data-members]', root);
     if (mem && gi) {
       const names = gi.joined.slice().sort((a, b) => (a === leader ? -1 : b === leader ? 1 : a.localeCompare(b, 'ko')));
       mem.innerHTML = names.map((x) => `<span class="${x === leader ? 'lead' : ''}${x === me.name ? ' me' : ''}">${x === leader ? '★ ' : ''}${esc(x)}</span>`).join('') || '<span>입장 인원 없음</span>';
       $('[data-mcount]', root).textContent = `${names.length}명${gi.roster ? ' / ' + gi.roster + '명' : ''}`;
     }
+    // 내 의견: 아직 입력 전이면 서버 값으로 채움
+    const myNote = (notes[g] || {})[me.name];
+    if (!noteDraft && myNote) {
+      $$('[data-nk]', root).forEach((ta) => { if (document.activeElement !== ta) ta.value = myNote[ta.dataset.nk] || ''; });
+    }
+    // 모두의 의견
+    const all = Object.entries(notes[g] || {}).filter(([, n]) => filled(n));
+    const cnt = $('[data-ncount]', root);
+    if (cnt) cnt.textContent = `${all.length}명 작성`;
+    const box = $('[data-allnotes]', root);
+    if (box) {
+      box.classList.toggle('hidden', !showAll);
+      $('[data-toggleall]', root).textContent = showAll ? '모두의 의견 접기' : `모두의 의견 보기 (${all.length}명)`;
+      if (showAll) {
+        box.innerHTML = all.length ? C.FIELDS.map((f) => {
+          const items = all.filter(([, n]) => (n[f.key] || '').trim());
+          return `<div class="an-f"><div class="an-h">${f.label} <small>${items.length}</small></div>${items.map(([nm, n]) =>
+            `<div class="an-i"><b>${esc(nm)}</b>${esc(n[f.key].trim())}</div>`).join('') || '<div class="an-i empty">작성 내용 없음</div>'}</div>`;
+        }).join('') : '<div class="an-i empty">아직 작성된 의견이 없습니다.</div>';
+      }
+    }
+    // 분임 최종 의견
     const rep = reports[g] || {};
     if (amLeader && !leaderDirty) {
-      // 아직 직접 고치기 전이면 서버의 최신 기록으로 채움 (다른 기기에서 쓴 내용 포함)
       $$('[data-fk]', root).forEach((ta) => {
         const v = rep[ta.dataset.fk] || '';
         if (document.activeElement !== ta && ta.value !== v) { ta.value = v; ta.nextElementSibling.textContent = `${v.length} / 800`; }
@@ -630,44 +713,73 @@
       st.className = 'st ' + cls; st.textContent = txt;
     }
     const sb = $('[data-submit]', root);
-    if (sb) sb.textContent = rep.status === 'done' ? '수정 내용 다시 제출하기' : '제출하고 전체 공유하기';
+    if (sb) sb.textContent = rep.status === 'done' ? '수정 내용 다시 제출하기' : '최종 의견 제출 · 전체 공유';
   }
+
   function buildGroupTab(root, g, leader, amLeader) {
     const G = C.GROUPS[g - 1];
     const rep = reports[g] || {};
     leaderDirty = false;
-    let rec;
+    let fin;
     if (amLeader) {
-      rec = `<div class="gbox"><h5>토의 기록 <span><span class="savest" data-save></span> <span class="st" data-rst></span></span></h5>
-        <p class="hint" style="margin:-4px 0 12px">분임장 작성 · 입력 내용 자동 저장 및 분임원 실시간 공유</p>
+      fin = `<p class="hint" style="margin:-4px 0 12px">분임장 작성 · 토론 내용을 요약하여 입력 · 자동 저장</p>
         ${C.FIELDS.map((f) => `<div class="fld"><label>${f.label}<small>${f.sub}</small></label>
-          <textarea class="ta" data-fk="${f.key}" maxlength="800" placeholder="토의 내용 입력"></textarea><div class="cnt2"></div></div>`).join('')}
-        <button class="btn full teal" data-submit>제출하고 전체 공유하기</button></div>`;
+          <textarea class="ta" data-fk="${f.key}" maxlength="800" placeholder="토론 내용 요약 입력"></textarea><div class="cnt2"></div></div>`).join('')}
+        <button class="btn full teal" data-submit>최종 의견 제출 · 전체 공유</button>`;
     } else if (leader) {
-      rec = `<div class="gbox"><h5>토의 기록 · 분임장 ${esc(leader)} <span class="st" data-rst></span></h5>
-        ${C.FIELDS.map((f) => `<div class="fld"><label>${f.label}<small>${f.sub}</small></label><div class="rview empty" data-rv="${f.key}"></div></div>`).join('')}
-        <p class="hint">분임장이 작성하는 내용이 실시간으로 표시됩니다.</p></div>`;
+      fin = `<p class="hint" style="margin:-4px 0 12px">분임장 ${esc(leader)} 작성 · 실시간 표시</p>
+        ${C.FIELDS.map((f) => `<div class="fld"><label>${f.label}<small>${f.sub}</small></label><div class="rview empty" data-rv="${f.key}"></div></div>`).join('')}`;
     } else {
-      rec = `<div class="gbox"><h5>토의 기록</h5><div class="lead-cta">분임장 미지정<br>분임장을 맡으신 경우 아래 버튼을 눌러 기록을 시작해 주십시오.
-        <button class="btn full" data-claim>분임장으로 기록 시작</button></div></div>`;
+      fin = `<div class="lead-cta">분임장 미지정<br>분임장을 맡으신 경우 아래 버튼을 눌러 주십시오.
+        <button class="btn full" data-claim>분임장으로 최종 의견 작성</button></div>`;
     }
     root.innerHTML = `
       <div class="gbox head" style="--c:${G.color}"><div class="gk">${g}분임</div><div class="gt">${esc(G.topic)}</div>
-        <ul>${G.guide.map((q) => `<li>${esc(q)}</li>`).join('')}</ul></div>
+        <ul>${G.guide.map((q) => `<li>${esc(q)}</li>`).join('')}</ul>
+        <div class="steps"><span>① 나의 의견 입력</span><span>② 모두의 의견 보며 토론</span><span>③ 분임장 최종 정리</span></div></div>
       <div class="gbox" style="--c:${G.color}"><h5>함께하는 선생님 <span class="savest" data-mcount></span></h5><div class="members" data-members></div></div>
-      ${rec}
+      <div class="gbox"><h5><span>① 나의 의견</span><span class="savest" data-nsave></span></h5>
+        <p class="hint" style="margin:-4px 0 12px">각자 입력 · 자동 저장 · 같은 분임 선생님들과 공유</p>
+        ${C.FIELDS.map((f) => `<div class="fld"><label>${f.label}<small>${f.sub}</small></label>
+          <textarea class="ta sm" data-nk="${f.key}" maxlength="600" placeholder="${f.label} 입력"></textarea></div>`).join('')}</div>
+      <div class="gbox"><h5><span>② 우리 분임 의견 모아보기</span><span class="savest" data-ncount></span></h5>
+        <button class="btn full" data-toggleall>모두의 의견 보기</button>
+        <div class="allnotes hidden" data-allnotes></div></div>
+      <div class="gbox"><h5><span>③ 분임 최종 의견</span><span class="st" data-rst></span></h5>${fin}</div>
       <button class="linkbtn" data-relogin>이름 다시 입력 · 분임 변경</button>`;
+
     $('[data-relogin]', root).onclick = async () => {
       if (!confirm('이름을 다시 입력하시겠습니까?')) return;
       await api('leave', {}, true).catch(() => {});
-      me = null; saveMe(); gtabSig = '';
+      me = null; saveMe(); gtabSig = ''; noteDraft = null;
       showJoin('name');
     };
+    $('[data-toggleall]', root).onclick = () => { showAll = !showAll; updateGroupTab(); };
+
+    // ① 나의 의견
+    const nts = $$('[data-nk]', root);
+    const myNote = (notes[g] || {})[me.name] || {};
+    nts.forEach((ta) => {
+      ta.value = noteDraft ? noteDraft[ta.dataset.nk] || '' : myNote[ta.dataset.nk] || '';
+      ta.oninput = () => {
+        noteDraft = Object.fromEntries(nts.map((t) => [t.dataset.nk, t.value]));
+        const ns = $('[data-nsave]', root);
+        ns.className = 'savest'; ns.textContent = '입력 중…';
+        clearTimeout(noteT);
+        noteT = setTimeout(async () => {
+          try {
+            await api('note', { fields: noteDraft }, true);
+            ns.className = 'savest ok'; ns.textContent = `저장됨 ${hhmm()}`;
+          } catch (_) { ns.className = 'savest'; ns.textContent = '저장 실패 · 다시 입력해 주십시오'; }
+        }, 1200);
+      };
+    });
+
     const claim = $('[data-claim]', root);
     if (claim) claim.onclick = async () => {
-      if (!confirm(`${g}분임 분임장으로 토의 기록을 작성하시겠습니까?`)) return;
+      if (!confirm(`${g}분임 분임장으로 최종 의견을 작성하시겠습니까?`)) return;
       await api('claim', {});
-      toast('분임장으로 지정되었습니다. 기록을 시작해 주십시오.');
+      toast('분임장으로 지정되었습니다.');
     };
     if (amLeader) {
       const tas = $$('[data-fk]', root);
@@ -678,22 +790,18 @@
         ta.oninput = () => { leaderDirty = true; counter(ta); queueSave(); };
       });
       const fields = () => Object.fromEntries(tas.map((t) => [t.dataset.fk, t.value]));
-      const sv = $('[data-save]', root);
+      const sv = $('[data-rst]', root);
       const doSave = async (submit) => {
         clearTimeout(saveT);
-        sv.className = 'savest'; sv.textContent = '저장 중…';
         try {
           await api('report', { fields: fields(), submit: !!submit }, !submit);
-          const d = new Date();
-          sv.className = 'savest ok';
-          sv.textContent = `저장됨 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
           return true;
-        } catch (e) { sv.className = 'savest'; sv.textContent = '저장 실패 · 다시 시도'; return false; }
+        } catch (e) { toast('저장에 실패했습니다. 다시 시도해 주십시오.'); return false; }
       };
-      function queueSave() { clearTimeout(saveT); sv.className = 'savest'; sv.textContent = '입력 중…'; saveT = setTimeout(() => doSave(false), 1200); }
+      function queueSave() { clearTimeout(saveT); sv.className = 'st'; sv.textContent = '입력 중…'; saveT = setTimeout(() => doSave(false), 1200); }
       $('[data-submit]', root).onclick = async () => {
         if (!tas.some((t) => t.value.trim())) { toast('내용을 먼저 입력해 주십시오.'); return; }
-        if (await doSave(true)) toast('제출되었습니다. 공유 시간에 전체 화면에 표시됩니다.');
+        if (await doSave(true)) toast('제출되었습니다. 전체 화면에 실시간으로 공유됩니다.');
       };
     }
   }
