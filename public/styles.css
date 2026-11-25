@@ -532,3 +532,8 @@ input, textarea { font-family: inherit; }
 @keyframes cmGlow { 0% { box-shadow: 0 0 0 4px var(--gold); background: #fff8dc; } 100% { box-shadow: 0 0 0 0 transparent; } }
 
 .gbox { scroll-margin-top: 118px; }
+
+/* 참여 안내: 단계 제목만 */
+.join-steps { top: 300px; gap: 44px; }
+.jstep { align-items: center; }
+.jstep h4 { margin: 0; font-size: 44px; }

@@ -40,8 +40,8 @@
 
     join: () => `${H(0)}${T('휴대폰으로 함께 참여하기')}
       <div class="join-steps">
-        ${[['QR 코드 스캔', '휴대폰 카메라로 오른쪽 QR 코드 스캔'], ['이름 입력', '이름 입력 시 분임 자동 배정'], ['함께 보기 · 참여하기', '휴대폰에서 발표 화면 실시간 확인<br>응답 및 분임 토의 기록 참여']]
-          .map(([a, b], i) => `<div class="jstep a left" style="--d:${0.4 + i * 0.25}s"><b>${i + 1}</b><div><h4>${a}</h4><p>${b}</p></div></div>`).join('')}
+        ${['QR 코드 스캔', '이름 입력', '함께 보기 · 참여하기']
+          .map((a, i) => `<div class="jstep a left" style="--d:${0.4 + i * 0.25}s"><b>${i + 1}</b><h4>${a}</h4></div>`).join('')}
       </div>
       <div class="join-qr a zoom" style="--d:.5s"><img src="/qr.svg" alt="참여 QR"><div class="u" data-joinurl></div></div>
       <div class="join-live a up" style="--d:1.2s"><span class="dot"></span><b data-joined>0</b>명 입장
