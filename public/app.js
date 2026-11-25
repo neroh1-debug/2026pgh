@@ -84,8 +84,8 @@
     renderReports();
     if (!isPresenter) {
       renderPanel();
-      // 토의 시간 화면이 되면 휴대폰은 '우리 분임' 탭으로
-      if (n === TIMER_SLIDE && prevKey !== 'timer' && me) setTab('group');
+      // 발표자가 화면을 넘기면: 토의 시간(13쪽)은 '우리 분임' 탭, 그 외에는 항상 '발표 화면' 탭
+      if (me) setTab(n === TIMER_SLIDE ? 'group' : 'screen');
       updateTabDot();
     }
   }
@@ -468,7 +468,7 @@
       me = { name: d.name, group: d.group };
       saveMe();
       // 이름 확인 후 확인 화면 없이 발표자가 띄운 화면으로 바로 입장
-      tab = 'screen';
+      tab = cur === TIMER_SLIDE ? 'group' : 'screen';
       enterAudience();
       toast(`${me.name} 선생님 · ${me.group}분임(${C.GROUPS[me.group - 1].topic}) 배정`);
     } else if (d.candidates) showJoin('pick', { name, candidates: d.candidates });
