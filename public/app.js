@@ -120,10 +120,13 @@
     for (const [n, r] of Object.entries(results)) {
       const el = slideEl(Number(n));
       $$(`[data-total="${n}"]`, el).forEach((t) => {
-        if (t.textContent !== String(r.total)) {
+        const prev = t.dataset.v === undefined ? null : Number(t.dataset.v);
+        if (prev !== r.total) {
           t.textContent = r.total;
-          const like = t.closest('.like');
-          if (like) { like.classList.remove('bump'); void like.offsetWidth; like.classList.add('bump'); }
+          t.dataset.v = r.total;
+          const like = t.closest('.lk-k');
+          // 처음 화면에 들어올 때는 조용히, 그 뒤로 공감이 늘면 하트 폭죽
+          if (like && prev !== null && r.total > prev) heartBurst(like, Math.min(3, r.total - prev));
         }
       });
       if (r.type === 'choice' || r.type === 'multi') renderBars(el, r);
@@ -131,6 +134,38 @@
       else if (r.type === 'text') renderWall(el, n, r);
     }
   }
+  // 공감 하트 폭죽
+  const HEARTS = ['#e2463f', '#ff6b81', '#ff8fa3', '#f0506e', '#ffb3c1', '#d63384'];
+  function heartBurst(box, times = 1) {
+    box.classList.remove('bump'); void box.offsetWidth; box.classList.add('bump');
+    const layer = $('.burst', box);
+    if (!layer || !box.closest('.slide').classList.contains('active')) return;
+    for (let k = 0; k < times; k++) {
+      setTimeout(() => {
+        for (let i = 0; i < 22; i++) {
+          const h = document.createElement('span');
+          h.className = 'ht';
+          h.textContent = '♥';
+          const ang = (-90 + (Math.random() - 0.5) * 150) * Math.PI / 180;
+          const dist = 160 + Math.random() * 320;
+          h.style.setProperty('--dx', Math.cos(ang) * dist + 'px');
+          h.style.setProperty('--dy', Math.sin(ang) * dist + 'px');
+          h.style.setProperty('--r', (Math.random() - 0.5) * 120 + 'deg');
+          h.style.setProperty('--s', (0.7 + Math.random() * 1.3).toFixed(2));
+          h.style.color = HEARTS[i % HEARTS.length];
+          h.style.animationDelay = Math.random() * 0.12 + 's';
+          layer.appendChild(h);
+          setTimeout(() => h.remove(), 1700);
+        }
+        const big = document.createElement('span');
+        big.className = 'ht-big';
+        big.textContent = '♥';
+        layer.appendChild(big);
+        setTimeout(() => big.remove(), 1300);
+      }, k * 260);
+    }
+  }
+
   function renderBars(el, r) {
     const list = $('.choice-list', el);
     const max = Math.max(1, ...r.counts);
@@ -533,8 +568,20 @@
         const ta = $('.cm-form textarea', panel);
         const t = ta.value.trim();
         if (!t) return;
-        await api('comment', { g, text: t, anon: $('.cm-form input', panel).checked });
+        const anon = $('.cm-form input', panel).checked;
         ta.value = ''; ta.blur();
+        // 서버 응답을 기다리지 않고 내 화면에 먼저 표시
+        const box = $('[data-clist]', panel);
+        if (box) {
+          $('.hint', box)?.remove();
+          const m = document.createElement('div');
+          m.className = 'cm-m';
+          m.innerHTML = '<b></b>';
+          $('b', m).textContent = anon ? '익명' : me ? me.name : '익명';
+          m.append(t);
+          box.prepend(m);
+        }
+        try { await api('comment', { g, text: t, anon }); } catch (_) { ta.value = t; renderComments(); return; }
         toast('댓글이 등록되었습니다.');
       };
       const btn = $('.likebtn', panel);
@@ -604,13 +651,15 @@
       const list = (comments[g] || []).slice().reverse();
       $('[data-cn]', strip).textContent = list.length;
       const row = $('.cm-items', strip);
-      const keep = new Set(list.slice(0, 4).map((c) => c.id));
+      const keep = new Set(list.slice(0, 3).map((c) => c.id));
+      const fresh = strip.dataset.ready === '1';
+      strip.dataset.ready = '1';
       $$('.cm-i', row).forEach((n) => { if (!keep.has(n.dataset.id)) n.remove(); });
-      list.slice(0, 4).forEach((c, i) => {
+      list.slice(0, 3).forEach((c, i) => {
         let n = row.querySelector(`[data-id="${c.id}"]`);
         if (!n) {
           n = document.createElement('div');
-          n.className = 'cm-i';
+          n.className = 'cm-i' + (fresh ? ' new' : '');
           n.dataset.id = c.id;
           n.innerHTML = '<b></b><span></span><button class="x" title="화면에서 숨기기">✕</button>';
           $('b', n).textContent = c.name || '익명';

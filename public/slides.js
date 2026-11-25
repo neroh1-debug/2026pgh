@@ -164,11 +164,12 @@
       const g = grp(p.g);
       return `${H(3)}
         <div class="rp-head a left" style="--d:.1s;--c:${g.color}"><span class="no">${p.g}분임</span><span class="tp">${esc(g.topic)}</span></div>
-        <div class="rp-meta a fade" style="--d:.4s"><span data-rlead></span><span class="like"><span class="h">♥</span> 공감 <b data-total="${n}">0</b></span></div>
+        <div class="rp-meta a fade" style="--d:.4s"><span data-rlead></span></div>
         <div class="rp-cols" data-report="${p.g}">
           ${C.FIELDS.map((f, i) => `<div class="rp a up" style="--d:${0.35 + i * 0.2}s;--c:${g.color}"><div class="h"><b>${f.label}</b><small>${f.sub}</small></div><div class="bd" data-f="${f.key}"></div></div>`).join('')}
         </div>
         <div class="cm-strip a fade" style="--d:.9s" data-comments="${p.g}">
+          <div class="lk-k"><span class="h">♥</span> 공감 <b data-total="${n}">0</b><div class="burst"></div></div>
           <div class="cm-k">💬 댓글 <b data-cn>0</b></div>
           <div class="cm-items"></div><div class="cm-empty">휴대폰에서 공감 ♥ 과 댓글을 남겨 주십시오</div>
         </div>`;
