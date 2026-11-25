@@ -57,7 +57,7 @@
       ${[['설문결과 소개', '교육주체 설문으로 돌아본 2026학년도'], ['분임별 주제토의', '8개 분임 · 영역별 성과와 과제, 실천 제안'], ['토의결과 공유', '분임장 발표 · 공감 나누기'], ['차년도 교육활동 의견수렴', '2027학년도를 함께 그리기']]
         .map(([t, s], i) => `<div class="ag-row a right" style="top:${96 + i * 128}px;--d:${0.5 + i * 0.15}s"><b>0${i + 1}</b><div><div class="t">${t}</div><div class="s">${s}</div></div></div>`).join('')}`,
 
-    ice: (n) => `${H(0)}${CLOUD(n, '올 한 해 우리 학교를 <span class="hl">한 단어</span>로 표현한다면?', '휴대폰으로 떠오르는 단어를 보내 주십시오')}`,
+    ice: (n) => `${H(0)}${CLOUD(n, '올 한해 나의 교육활동을 <span class="hl">한 마디</span>로 표현한다면?', '휴대폰으로 떠오르는 한 마디를 보내 주십시오')}`,
 
     sec: (n, p) => `
       <svg class="abs" width="1440" height="810" viewBox="0 0 1440 810" style="left:0;top:0">
@@ -188,7 +188,7 @@
       <div class="cloud-empty a fade" style="--d:.8s;top:470px" data-empty="${n}">휴대폰으로 의견을 보내 주십시오<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
       ${TOTAL(n)}`,
 
-    pledge: (n) => `${H(4)}${CLOUD(n, '함께할 도약을 위한 <span class="hl" style="color:var(--teal)">나의 한 단어</span>', '2027학년도를 향한 다짐을 한 단어로 보내 주십시오')}`,
+    pledge: (n) => `${H(4)}${CLOUD(n, '수고한 나 자신과 동료 선생님에게 건네는 <span class="hl" style="color:var(--teal)">5글자</span>', '휴대폰으로 5글자 응원의 말을 보내 주십시오')}`,
 
     end: () => `
       <svg class="abs" width="1440" height="810" viewBox="0 0 1440 810" style="left:0;top:0">

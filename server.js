@@ -470,6 +470,7 @@ const server = http.createServer(async (req, res) => {
       } else {
         const t = cleanLine(v, 20);
         if (!t) return json(res, 400, { error: '단어를 입력해 주십시오.' });
+        if (cfg.chars && t.replace(/\s+/g, '').length > cfg.chars) return json(res, 400, { error: `${cfg.chars}글자 이내로 입력해 주십시오.` });
         const arr = (bucket[cid] = bucket[cid] || []);
         if (arr.length >= cfg.max) return json(res, 429, { error: `최대 ${cfg.max}개까지 보낼 수 있습니다.` });
         if (arr.some((w) => norm(w.t) === norm(t))) return json(res, 409, { error: '이미 보낸 단어입니다.' });

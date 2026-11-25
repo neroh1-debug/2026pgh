@@ -620,8 +620,8 @@
         toast('의견이 전달되었습니다.');
       };
     } else {
-      panel.innerHTML = head(`짧은 단어로 입력 · 한 번에 하나씩, 최대 ${cfg.max}개`) +
-        `<form class="row"><input type="text" maxlength="20" placeholder="단어 입력" enterkeyhint="send" required><button>보내기</button></form><div class="mine"></div><div class="hint"></div>`;
+      panel.innerHTML = head(cfg.chars ? `${cfg.chars}글자 이내(띄어쓰기 제외) · 한 번에 하나씩, 최대 ${cfg.max}개` : `짧은 단어로 입력 · 한 번에 하나씩, 최대 ${cfg.max}개`) +
+        `<form class="row"><input type="text" maxlength="${cfg.chars ? cfg.chars + 3 : 20}" placeholder="${cfg.placeholder || '단어 입력'}" enterkeyhint="send" required><button>보내기</button></form><div class="mine"></div><div class="hint"></div>`;
       const renderMine = () => {
         const box = $('.mine', panel); box.innerHTML = '';
         (mine[n] || []).forEach((w) => { const s = document.createElement('span'); s.textContent = w; box.appendChild(s); });
@@ -635,6 +635,7 @@
         const inp = $('input', panel);
         const v = inp.value.trim();
         if (!v) return;
+        if (cfg.chars && v.replace(/\s+/g, '').length > cfg.chars) { toast(`${cfg.chars}글자 이내로 입력해 주십시오.`); return; }
         await api('respond', { slide: cur, value: v });
         mine[n] = (mine[n] || []).concat(v); saveMine();
         inp.value = '';

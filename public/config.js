@@ -97,7 +97,7 @@
     { key: 'cover' },
     { key: 'join' },
     { key: 'agenda' },
-    { key: 'ice', interact: { type: 'words', max: 3, title: '올 한 해 우리 학교를 한 단어로 표현한다면?' } },
+    { key: 'ice', interact: { type: 'words', max: 3, title: '올 한해 나의 교육활동을 한 마디로 표현한다면?' } },
     { key: 'sec', n: 1 },
     { key: 'svResp' },
     { key: 'svGrowth' },
@@ -112,7 +112,7 @@
     ...CFG.GROUPS.map((g, i) => ({ key: 'report', g: i + 1, interact: { type: 'like', g: i + 1, title: `${i + 1}분임 · ${g.topic}` } })),
     { key: 'sec', n: 4 },
     { key: 'opinion', interact: { type: 'text', max: 3, len: 150, title: '2027학년도 교육활동에 바라는 점' } },
-    { key: 'pledge', interact: { type: 'words', max: 2, title: '함께할 도약을 위한 나의 한 단어' } },
+    { key: 'pledge', interact: { type: 'words', max: 2, chars: 5, placeholder: '예: 고생했어요', title: '수고한 나 자신과 동료 선생님에게 건네는 5글자' } },
     { key: 'end' },
   ];
 
