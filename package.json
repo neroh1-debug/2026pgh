@@ -1,0 +1,17 @@
+{
+  "name": "self-eval-interactive",
+  "version": "1.0.0",
+  "description": "자율형공립고 2.0 자체평가회 - 지나온 성장, 함께할 도약 (인터랙티브 발표)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "ISC",
+  "private": true,
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#224b99">
+  <title>자율형공립고 2.0 자체평가회 · 지나온 성장, 함께할 도약</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <!-- 참여자: 입장 화면 -->
+  <div id="join" class="join hidden">
+    <div class="join-in">
+      <div class="j-k" id="jYear"></div>
+      <h1 id="jTitle"></h1>
+      <p class="j-theme"><span>지나온 성장,</span> <span>함께할 도약</span></p>
+      <div class="j-card" id="jCard"></div>
+    </div>
+    <button class="lock j-lock" id="jLock" aria-label="발표자 모드">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+    </button>
+  </div>
+
+  <!-- 참여자 화면 -->
+  <div id="aud" class="aud hidden">
+    <div class="aud-top">
+      <div class="me-chip" id="meChip"></div>
+      <div class="tchip hidden" id="tChip"></div>
+      <div class="st" id="conn">연결 중</div>
+      <button class="lock" id="lockBtn" aria-label="발표자 모드">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      </button>
+    </div>
+    <div class="tabs" id="tabs">
+      <button data-tab="screen" class="on">발표 화면</button>
+      <button data-tab="group">우리 분임<i class="tdot hidden" id="tabDot"></i></button>
+    </div>
+    <div id="tabScreen">
+      <div id="audStageSlot"></div>
+      <div class="aud-pg" id="audPg"></div>
+      <div id="panel" class="panel idle"></div>
+    </div>
+    <div id="tabGroup" class="hidden"></div>
+    <button class="fab" id="askBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>질문하기
+    </button>
+  </div>
+
+  <!-- 공용 슬라이드 무대 -->
+  <div class="stage" id="stage"><div class="deck" id="deck"></div><div id="spot"></div></div>
+
+  <!-- 발표자 도구 -->
+  <div id="pres" class="hidden">
+    <div class="qr-card" id="qrCard" title="클릭: 크게 보기 / Q: 접기">
+      <img src="/qr.svg" alt="참여 QR">
+      <div class="cap">QR로 참여하기<br><span class="zoom-hint">🔍 눌러서 크게</span></div>
+    </div>
+    <button class="qbtn" id="qBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      질문 확인 <span class="badge zero" id="qBadge">0</span>
+    </button>
+    <button class="ansbtn hidden" id="ansBtn" title="정답 확인 (A)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      <span class="lbl">정답 확인</span>
+    </button>
+    <div class="tctl hidden" id="tCtl">
+      <span class="k">토의 시간</span>
+      <button data-min="10">10분</button><button data-min="15">15분</button><button data-min="20">20분</button><button data-min="25">25분</button><button data-min="30">30분</button>
+      <span class="sep"></span>
+      <button class="pri" data-op="toggle" id="tToggle">▶ 시작</button>
+      <button data-op="add">+1분</button>
+      <button data-op="reset">↺ 처음으로</button>
+    </div>
+    <div class="toolbar" id="toolbar">
+      <button id="homeBtn" title="첫 화면으로 (Home)">⏮ 처음</button>
+      <button id="prevBtn" title="이전 (←)">◀</button>
+      <span class="pg" id="pg">1 / 1</span>
+      <button id="nextBtn" title="다음 (→)">▶</button>
+      <span class="sep"></span>
+      <button id="resetBtn" class="invisible" title="이 화면의 응답 초기화">응답 초기화</button>
+      <button id="replayBtn" title="애니메이션 다시 재생 (R)">↻ 재생</button>
+      <button id="qrBigBtn" title="QR 크게">QR 크게</button>
+      <button id="adminBtn" title="분임 명단·분임장·결과 저장 (G)">분임 관리</button>
+      <button id="fsBtn" title="전체화면 (F)">전체화면</button>
+      <span class="sep"></span>
+      <span class="ppl" id="ppl">접속 0</span>
+      <button id="exitBtn" title="발표자 모드 종료">나가기</button>
+    </div>
+    <aside class="drawer" id="drawer">
+      <header><h3>참여자 질문</h3><button class="dclose" aria-label="닫기">✕</button></header>
+      <div class="filters"><button class="on" data-f="open">미답변</button><button data-f="all">전체</button></div>
+      <div class="qlist" id="qlist"></div>
+    </aside>
+    <aside class="drawer wide" id="admin">
+      <header><h3>분임 관리</h3><button class="dclose" aria-label="닫기">✕</button></header>
+      <div class="adm" id="adm"></div>
+    </aside>
+  </div>
+
+  <div id="modalRoot"></div>
+
+  <script src="/config.js"></script>
+  <script src="/slides.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
