@@ -788,9 +788,9 @@
         <div class="steps"><span>① 나의 의견 입력</span><span>② 모두의 의견 보며 토론</span><span>③ 분임장 최종 정리</span></div></div>
       <div class="gbox" style="--c:${G.color}"><h5>함께하는 선생님 <span class="savest" data-mcount></span></h5><div class="members" data-members></div></div>
       <div class="gbox"><h5><span>① 나의 의견</span><span class="savest" data-nsave></span></h5>
-        <p class="hint" style="margin:-4px 0 12px">각자 입력 · 자동 저장 · 같은 분임 선생님들과 공유</p>
         ${C.FIELDS.map((f) => `<div class="fld"><label>${f.label}<small>${f.sub}</small></label>
-          <textarea class="ta sm" data-nk="${f.key}" maxlength="600" placeholder="${f.label} 입력"></textarea></div>`).join('')}</div>
+          <textarea class="ta sm" data-nk="${f.key}" maxlength="600" placeholder="${f.label} 입력"></textarea></div>`).join('')}
+        <button class="btn full" data-nsavebtn>저장</button></div>
       <div class="gbox"><h5><span>② 우리 분임 의견 모아보기</span><span class="savest" data-ncount></span></h5>
         <button class="btn full" data-toggleall>모두의 의견 보기</button>
         <div class="allnotes hidden" data-allnotes></div></div>
@@ -800,7 +800,7 @@
     $('[data-relogin]', root).onclick = async () => {
       if (!confirm('이름을 다시 입력하시겠습니까?')) return;
       await api('leave', {}, true).catch(() => {});
-      me = null; saveMe(); gtabSig = ''; noteDraft = null;
+      me = null; saveMe(); gtabSig = ''; noteDraft = null; store.del(P + 'note');
       showJoin('name');
     };
     $('[data-toggleall]', root).onclick = () => { showAll = !showAll; updateGroupTab(); };
@@ -808,21 +808,43 @@
     // ① 나의 의견
     const nts = $$('[data-nk]', root);
     const myNote = (notes[g] || {})[me.name] || {};
+    if (!noteDraft) { try { noteDraft = JSON.parse(store.get(P + 'note') || 'null'); } catch (_) { noteDraft = null; } }
+    const ns = $('[data-nsave]', root);
+    const sb = $('[data-nsavebtn]', root);
+    const paintSave = (dirty) => {
+      sb.textContent = dirty ? '저장' : '저장됨 · 수정 후 다시 저장';
+      sb.classList.toggle('sec', !dirty);
+      if (dirty) { ns.className = 'savest'; ns.textContent = '저장 전'; }
+    };
     nts.forEach((ta) => {
       ta.value = noteDraft ? noteDraft[ta.dataset.nk] || '' : myNote[ta.dataset.nk] || '';
       ta.oninput = () => {
         noteDraft = Object.fromEntries(nts.map((t) => [t.dataset.nk, t.value]));
-        const ns = $('[data-nsave]', root);
-        ns.className = 'savest'; ns.textContent = '입력 중…';
-        clearTimeout(noteT);
-        noteT = setTimeout(async () => {
-          try {
-            await api('note', { fields: noteDraft }, true);
-            ns.className = 'savest ok'; ns.textContent = `저장됨 ${hhmm()}`;
-          } catch (_) { ns.className = 'savest'; ns.textContent = '저장 실패 · 다시 입력해 주십시오'; }
-        }, 1200);
+        store.set(P + 'note', JSON.stringify(noteDraft)); // 저장 전 입력도 휴대폰에 보관
+        paintSave(true);
       };
     });
+    if (noteDraft) paintSave(true);
+    else if (filled(myNote)) { paintSave(false); ns.className = 'savest ok'; ns.textContent = '저장됨'; }
+    sb.onclick = async () => {
+      const fields = Object.fromEntries(nts.map((t) => [t.dataset.nk, t.value]));
+      if (!filled(fields)) { toast('의견을 먼저 입력해 주십시오.'); return; }
+      sb.disabled = true;
+      try {
+        await api('note', { fields });
+        noteDraft = null; store.del(P + 'note');
+        ns.className = 'savest ok'; ns.textContent = `저장됨 ${hhmm()}`;
+        paintSave(false);
+        // 저장하면 모두의 의견 보기로 바로 연결
+        notes[g] = Object.assign({}, notes[g], { [me.name]: Object.assign({ ts: Date.now() }, fields) });
+        showAll = true;
+        updateGroupTab();
+        const all = $('[data-allnotes]', root);
+        if (all) all.closest('.gbox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        toast('저장되었습니다. 우리 분임 의견에 공유되었습니다.');
+      } catch (_) { /* 오류 안내는 api()에서 */ }
+      sb.disabled = false;
+    };
 
     const claim = $('[data-claim]', root);
     if (claim) claim.onclick = async () => {
